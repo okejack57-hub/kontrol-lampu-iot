@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KONTROL LAMPU 4CH IOT</title>
+  
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome untuk ikon petir di footer -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    :root {
+      --neon-blue: #00d4ff;
+      --neon-glow: 0 0 10px var(--neon-blue), 0 0 20px var(--neon-blue), 0 0 40px var(--neon-blue);
+      --bg-dark: #0a0a0f;
+      --card-bg: rgba(20, 20, 35, 0.8);
+      --text-main: #e0e0ff;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      background: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 20% 80%, rgba(0, 212, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(0, 212, 255, 0.1) 0%, transparent 50%);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      min-height: 100vh;
+      padding: 15px;
+      color: var(--text-main);
+    }
+
+    .header-glow {
+      text-align: center;
+      margin-top: 10px;
+      margin-bottom: 20px;
+    }
+
+    .header-glow h1 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--neon-blue);
+      text-shadow: var(--neon-glow);
+      margin: 5px 0;
+    }
+
+    .header-glow p {
+      font-size: 0.8rem;
+      opacity: 0.8;
+      letter-spacing: 1px;
+    }
+
+    .status {
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      background: rgba(0, 212, 255, 0.2);
+      backdrop-filter: blur(10px);
+      color: var(--neon-blue);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      border: 1px solid var(--neon-blue);
+      box-shadow: var(--neon-glow);
+      z-index: 100;
+    }
+
+    /* Style untuk Master Control Panel */
+    .master-panel {
+      background: rgba(30, 30, 50, 0.5);
+      border: 1px dashed rgba(0, 212, 255, 0.5);
+      border-radius: 12px;
+      padding: 12px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      width: 100%;
+      max-width: 1000px;
+      justify-content: space-between;
+    }
+
+    .master-title {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      color: #fff;
+      text-shadow: 0 0 5px rgba(255,255,255,0.5);
+    }
+
+    .master-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-master {
+      background: transparent;
+      border: 1px solid var(--neon-blue);
+      color: var(--neon-blue);
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 11px;
+      transition: all 0.3s ease;
+    }
+
+    .btn-master:hover {
+      background: var(--neon-blue);
+      color: #000;
+      box-shadow: var(--neon-glow);
+    }
+
+    .btn-master.off {
+      border-color: #ff4d4d;
+      color: #ff4d4d;
+    }
+
+    .btn-master.off:hover {
+      background: #ff4d4d;
+      color: #fff;
+      box-shadow: 0 0 10px #ff4d4d;
+    }
+
+    /* Style untuk tombol Voice Command */
+    .btn-voice {
+      background: transparent;
+      border: 1px solid #d400ff;
+      color: #d400ff;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 11px;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .btn-voice:hover, .btn-voice.listening {
+      background: #d400ff;
+      color: #fff;
+      box-shadow: 0 0 10px #d400ff;
+    }
+
+    .voice-status-container {
+      width: 100%;
+      text-align: center;
+      margin-top: 10px;
+      font-size: 11px;
+      color: #d400ff;
+      font-weight: 600;
+      min-height: 16px;
+    }
+
+    /* Container utama: 4 Kolom di Desktop, otomatis 1 Kolom Vertikal di HP */
+    .container {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      margin-bottom: 30px;
+      width: 100%;
+      max-width: 1000px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(15px);
+      border-radius: 12px;
+      border: 1px solid rgba(0, 212, 255, 0.3);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      padding: 15px;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(0, 212, 255, 0.25);
+    }
+
+    .card h2 {
+      font-size: 14px;
+      color: var(--neon-blue);
+      margin-bottom: 10px;
+      font-weight: 600;
+      text-shadow: 0 0 5px var(--neon-blue);
+      text-align: left;
+    }
+
+    /* Layout Konten Sejajar */
+    .card-content {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .row-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .row-status {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      border-top: 1px solid rgba(0, 212, 255, 0.15);
+      padding-top: 8px;
+      min-height: 22px;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 28px;
+      flex-shrink: 0;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(255, 255, 255, 0.1);
+      transition: .4s;
+      border-radius: 28px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background-color: #fff;
+      transition: .4s;
+      border-radius: 50%;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    }
+
+    input:checked + .slider {
+      background-color: var(--neon-blue);
+      box-shadow: var(--neon-glow);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(22px);
+    }
+
+    .lamp-status {
+      font-size: 10px;
+      font-weight: 600;
+      text-align: left;
+      max-width: 55%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .connected {
+      color: #00ff88;
+      text-shadow: 0 0 5px #00ff88;
+    }
+
+    .disconnected {
+      color: #ff4d4d;
+    }
+
+    /* Fitur Timer Controls Sejajar */
+    .timer-controls {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      flex-grow: 1;
+      justify-content: flex-end;
+    }
+
+    .timer-input {
+      width: 44px;
+      background: rgba(0,0,0,0.5);
+      border: 1px solid var(--neon-blue);
+      color: var(--text-main);
+      padding: 4px 2px;
+      border-radius: 5px;
+      font-size: 10px;
+      text-align: center;
+      outline: none;
+    }
+
+    .timer-select {
+      background: rgba(0,0,0,0.5);
+      border: 1px solid var(--neon-blue);
+      color: var(--text-main);
+      padding: 4px 2px;
+      border-radius: 5px;
+      font-size: 10px;
+      outline: none;
+    }
+
+    .btn-timer {
+      background: transparent;
+      border: 1px solid var(--neon-blue);
+      color: var(--neon-blue);
+      padding: 4px 6px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .btn-timer:hover {
+      background: var(--neon-blue);
+      color: #000;
+      box-shadow: 0 0 8px var(--neon-blue);
+    }
+
+    .btn-timer.cancel {
+      border-color: #ff4d4d;
+      color: #ff4d4d;
+    }
+
+    .btn-timer.cancel:hover {
+      background: #ff4d4d;
+      color: #fff;
+      box-shadow: 0 0 8px #ff4d4d;
+    }
+
+    .timer-display {
+      font-size: 10px;
+      color: #ffb84d;
+      font-weight: 600;
+      text-shadow: 0 0 5px rgba(255, 184, 77, 0.5);
+      text-align: right;
+    }
+
+    .footer-text {
+      margin-top: 15px;
+      font-size: 0.8rem;
+      color: rgba(224, 224, 255, 0.6);
+      letter-spacing: 2px;
+      text-align: center;
+    }
+
+    .footer-text a {
+      color: var(--neon-blue);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    /* === RESPONSIVE LAYOUT (UNTUK HP & TABLET) === */
+    @media (max-width: 768px) {
+      /* Mengubah kotak grid menjadi 1 kolom vertikal penuh di HP */
+      .container { 
+        grid-template-columns: 1fr; 
+        gap: 12px;
+      }
+      
+      .master-panel { 
+        flex-direction: column; 
+        gap: 10px; 
+        text-align: center; 
+        padding: 12px;
+      }
+
+      .master-buttons {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .card {
+        padding: 12px 15px;
+      }
+
+      .card h2 {
+        font-size: 13px;
+        margin-bottom: 6px;
+      }
+
+      /* Timer dioptimalkan agar pas di lebar layar kecil */
+      .timer-input {
+        width: 48px;
+        font-size: 11px;
+      }
+
+      .timer-select {
+        font-size: 11px;
+      }
+
+      .btn-timer {
+        font-size: 11px;
+        padding: 5px 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="status">
+    <p id="status">Terputus</p>
+  </div>
+
+  <div class="header-glow">
+    <p>Versi-0001</p>
+    <p>========</p>
+    <h1>IOT KONTROL LAMPU 4CH</h1>
+  </div>
+
+  <div class="master-panel" style="flex-wrap: wrap;">
+    <div class="master-title" style="width: 100%; text-align: center; margin-bottom: 5px;">KONTROL SEMUA CHANNEL</div>
+    <div class="master-buttons" style="width: 100%; justify-content: center;">
+      <button class="btn-master" onclick="masterControl(true)">NYALAKAN SEMUA</button>
+      <button class="btn-master off" onclick="masterControl(false)">MATIKAN SEMUA</button>
+      <button class="btn-voice" id="btn-voice" onclick="toggleVoice()"><i class="fa-solid fa-microphone"></i> SUARA</button>
+    </div>
+    <div class="voice-status-container" id="voice-status"></div>
+  </div>
+
+  <div class="container" id="lamp-container">
+    <!-- Konten kartu lampu akan di-render oleh JavaScript di sini -->
+  </div>
+
+  <div class="footer-text">
+    <footer>
+      Powered by : <i class="fa-solid fa-bolt" style="color: yellow;"></i>
+      <a href="#">UTAK-ATIK-MATUK</a>
+    </footer>
+  </div>
+
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <script>
+    const TOTAL_CHANNEL = 4;
+    const clientId = 'client_' + Math.random().toString(16).substr(2, 8);
+    const host = 'wss://broker.emqx.io:8084/mqtt';
+
+    const options = {
+      keepalive: 30,
+      clientId: clientId,
+      protocolId: 'MQTT',
+      protocolVersion: 4,
+      clean: true,
+      reconnectPeriod: 1000,
+      connectTimeout: 30 * 1000
+    }
+
+    const lampContainer = document.getElementById('lamp-container');
+
+    // Render kartu lampu 1 - 4 secara otomatis dengan tambahan fitur Timer yang sejajar
+    for(let i = 1; i <= TOTAL_CHANNEL; i++) {
+      lampContainer.innerHTML += `
+        <div class="card">
+          <h2>LAMPU-${i}</h2>
+          <div class="card-content">
+            <!-- Baris Utama: Sakelar & Kontrol Timer Sejajar -->
+            <div class="row-controls">
+              <label class="switch">
+                <input type="checkbox" id="lamp-switch${i}" onchange="publishLampu(${i})">
+                <span class="slider"></span>
+              </label>
+              
+              <div class="timer-controls">
+                <input type="number" id="time-val-${i}" class="timer-input" min="1" max="1440" placeholder="Mnt">
+                <select id="time-act-${i}" class="timer-select">
+                  <option value="on">ON</option>
+                  <option value="off">OFF</option>
+                </select>
+                <button class="btn-timer" id="btn-timer-${i}" onclick="toggleTimer(${i})">Set</button>
+              </div>
+            </div>
+            
+            <!-- Baris Status & Info Timer -->
+            <div class="row-status">
+              <div class="lamp-status disconnected" id="esp8266-${i}">-------</div>
+              <div class="timer-display" id="timer-display-${i}"></div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    console.log("Menghubungkan ke Broker...");
+    const client = mqtt.connect(host, options);
+
+    client.on('connect', () => {
+      console.log('Terhubung ke broker dengan ID: ' + clientId);
+      client.subscribe('mfr1.com/#', { qos: 1 });
+      
+      const statusElement = document.getElementById("status");
+      statusElement.innerHTML = "Terhubung";
+      statusElement.style.color = "#00ff88";
+      statusElement.style.textShadow = "0 0 5px #00ff88";
+      document.querySelector(".status").style.borderColor = "#00ff88";
+    });
+
+    client.on('error', (err) => {
+      console.error("Koneksi Error: ", err);
+    });
+
+    client.on('close', () => {
+      const statusElement = document.getElementById("status");
+      statusElement.innerHTML = "Terputus";
+      statusElement.style.color = "#ff4d4d";
+      statusElement.style.textShadow = "none";
+      document.querySelector(".status").style.borderColor = "#ff4d4d";
+    });
+
+    client.on('message', (topic, message) => {         
+      const msg = message.toString();
+      
+      for(let i = 1; i <= TOTAL_CHANNEL; i++) {
+        // 1. Sinkronisasi Sakelar (Switch) dari sumber lain
+        if (topic === `mfr1.com/lampu${i}`) {
+          const lampSwitch = document.getElementById(`lamp-switch${i}`);
+          if (lampSwitch) lampSwitch.checked = (msg === `on_${i}`);
+          break;
+        }
+        
+        // 2. Sinkronisasi Status Respon Balik ESP8266
+        if (topic === `mfr1.com/status${i}`) {
+          const statusEl = document.getElementById(`esp8266-${i}`);
+          if (statusEl) {
+            statusEl.innerHTML = msg;
+            
+            if (msg === `Lampu-${i} sukses dinyalakan`) {
+              statusEl.classList.add("connected");
+              statusEl.classList.remove("disconnected");
+            } else {
+              statusEl.classList.add("disconnected");
+              statusEl.classList.remove("connected");
+              if (msg === "" || msg === `off_${i}`) {
+                statusEl.innerHTML = "-------";
+              }
+            }
+          }
+          break;
+        }
+      }
+    });
+
+    // FUNGSI PUBLISH INDIVIDUAL
+    function publishLampu(ch) {
+      const isChecked = document.querySelector(`#lamp-switch${ch}`).checked;
+      const payload = isChecked ? `on_${ch}` : `off_${ch}`;
+      client.publish(`mfr1.com/lampu${ch}`, payload, {qos: 1, retain: true});
+    }
+
+    // FUNGSI MASTER SWITCH
+    function masterControl(action) {
+      for(let i = 1; i <= TOTAL_CHANNEL; i++) {
+        const lampSwitch = document.getElementById(`lamp-switch${i}`);
+        if (lampSwitch) {
+          lampSwitch.checked = action;
+          const payload = action ? `on_${i}` : `off_${i}`;
+          client.publish(`mfr1.com/lampu${i}`, payload, {qos: 1, retain: true});
+        }
+      }
+    }
+
+    // --- FUNGSI VOICE COMMAND (PERINTAH SUARA) ---
+    const voiceBtn = document.getElementById('btn-voice');
+    const voiceStatus = document.getElementById('voice-status');
+    let recognition;
+    let isListening = false;
+
+    // Cek dukungan browser untuk Web Speech API
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SpeechRecognition();
+      recognition.lang = 'id-ID'; // Bahasa Indonesia
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      recognition.onstart = function() {
+        isListening = true;
+        voiceBtn.classList.add('listening');
+        voiceBtn.innerHTML = '<i class="fa-solid fa-microphone-slash"></i> STOP';
+        voiceStatus.textContent = 'Mendengarkan perintah... (Minta Izin Mic jika muncul)';
+      };
+
+      recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript.toLowerCase();
+        voiceStatus.textContent = `Perintah dikenali: "${transcript}"`;
+        processVoiceCommand(transcript);
+      };
+
+      recognition.onerror = function(event) {
+        voiceStatus.textContent = 'Error/Tidak terdengar: ' + event.error;
+        stopVoice();
+      };
+
+      recognition.onend = function() {
+        stopVoice();
+      };
+    } else {
+      voiceBtn.style.display = 'none'; // Sembunyikan jika tidak didukung
+      voiceStatus.textContent = "Browser tidak mendukung perintah suara.";
+    }
+
+    function toggleVoice() {
+      if (!recognition) return;
+      if (isListening) {
+        recognition.stop();
+      } else {
+        recognition.start();
+      }
+    }
+
+    function stopVoice() {
+      isListening = false;
+      voiceBtn.classList.remove('listening');
+      voiceBtn.innerHTML = '<i class="fa-solid fa-microphone"></i> SUARA';
+      setTimeout(() => {
+        if(!isListening) voiceStatus.textContent = "";
+      }, 4000);
+    }
+
+    function processVoiceCommand(text) {
+      // Mapping angka kata ke numerik untuk antisipasi hasil STT
+      const angkaMap = {"satu": 1, "dua": 2, "tiga": 3, "empat": 4};
+      
+      if (text.includes('nyalakan semua') || text.includes('hidupkan semua')) {
+        masterControl(true);
+      } 
+      else if (text.includes('matikan semua') || text.includes('padamkan semua')) {
+        masterControl(false);
+      } 
+      else {
+        // Cek spesifik per channel
+        for (let i = 1; i <= TOTAL_CHANNEL; i++) {
+          const kataAngka = Object.keys(angkaMap).find(key => angkaMap[key] === i);
+          
+          const nyalaKondisi = text.includes(`nyalakan lampu ${i}`) || text.includes(`hidupkan lampu ${i}`) || text.includes(`nyalakan lampu ${kataAngka}`) || text.includes(`hidupkan lampu ${kataAngka}`);
+          const matiKondisi = text.includes(`matikan lampu ${i}`) || text.includes(`padamkan lampu ${i}`) || text.includes(`matikan lampu ${kataAngka}`) || text.includes(`padamkan lampu ${kataAngka}`);
+
+          if (nyalaKondisi) {
+            const sw = document.getElementById(`lamp-switch${i}`);
+            if(sw && !sw.checked) { sw.checked = true; publishLampu(i); }
+          } else if (matiKondisi) {
+            const sw = document.getElementById(`lamp-switch${i}`);
+            if(sw && sw.checked) { sw.checked = false; publishLampu(i); }
+          }
+        }
+      }
+    }
+
+    // --- FUNGSI TIMER ---
+    const activeTimers = {};
+
+    function toggleTimer(ch) {
+      const btn = document.getElementById(`btn-timer-${ch}`);
+      const display = document.getElementById(`timer-display-${ch}`);
+      
+      if (activeTimers[ch]) {
+        clearInterval(activeTimers[ch].interval);
+        activeTimers[ch] = null;
+        btn.textContent = "Set";
+        btn.classList.remove("cancel");
+        display.textContent = "";
+        return;
+      }
+
+      const minutesInput = document.getElementById(`time-val-${ch}`).value;
+      const minutes = parseInt(minutesInput);
+      const action = document.getElementById(`time-act-${ch}`).value;
+
+      if (isNaN(minutes) || minutes <= 0) {
+        display.textContent = "Error!";
+        display.style.color = "#ff4d4d";
+        setTimeout(() => { 
+          if(!activeTimers[ch]) {
+            display.textContent = ""; 
+            display.style.color = "#ffb84d";
+          }
+        }, 3000);
+        return;
+      }
+
+      display.style.color = "#ffb84d";
+      let secondsRemaining = minutes * 60;
+      
+      btn.textContent = "Batal";
+      btn.classList.add("cancel");
+
+      updateTimerDisplay(ch, secondsRemaining, action);
+
+      activeTimers[ch] = {
+        action: action,
+        interval: setInterval(() => {
+          secondsRemaining--;
+          updateTimerDisplay(ch, secondsRemaining, action);
+
+          if (secondsRemaining <= 0) {
+            clearInterval(activeTimers[ch].interval);
+            activeTimers[ch] = null;
+            
+            btn.textContent = "Set";
+            btn.classList.remove("cancel");
+            display.textContent = `${action.toUpperCase()} Selesai`;
+            display.style.color = "#00ff88";
+            
+            const switchEl = document.getElementById(`lamp-switch${ch}`);
+            if (switchEl) {
+              switchEl.checked = (action === 'on');
+              publishLampu(ch);
+            }
+            
+            setTimeout(() => {
+              if(!activeTimers[ch]) {
+                display.textContent = "";
+                display.style.color = "#ffb84d";
+              }
+            }, 3000);
+          }
+        }, 1000)
+      };
+    }
+
+    function updateTimerDisplay(ch, seconds, action) {
+      const display = document.getElementById(`timer-display-${ch}`);
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      
+      const formattedM = m.toString().padStart(2, '0');
+      const formattedS = s.toString().padStart(2, '0');
+      display.textContent = `${action.toUpperCase()}: ${formattedM}:${formattedS}`;
+    }
+  </script>
+</body>
+</html>
